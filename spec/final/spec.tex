@@ -15,7 +15,7 @@
 \usepackage{longtable}
 \usepackage{ragged2e}
 \usepackage{indentfirst}
-
+\usepackage[algoruled]{algorithm2e}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 
@@ -32,6 +32,12 @@ Dimitris Kolotouros}
 
 \begin{document}
 
+%Define the myinput macro for algorithm2e
+\newlength\mylen
+\newcommand\KwExtraIn[1]{%
+	\settowidth\mylen{\KwIn{}}%
+	\setlength\hangindent{\mylen}%
+	\hspace*{\mylen}#1\\}
 
 \newcommand\NextYear{%
   \advance\year by 1 \the\year\advance\year by -1}
@@ -259,9 +265,110 @@ encryption, using the intermediate key list.
 
 \subsubsection{Detailed description}
 For a more detailed description of the protocol we refer to \cite{mpenc}, however
-a pseudocode is provided.
+a pseudocode is provided.\\
 
-PUTGKAPSEUDOCODEHERE
+Algorithm \ref{upflow_algo} presents an overview of how each upflow message is constructed, using the data received from the previous upflow message.\\
+
+\begin{algorithm}[H]
+	\KwIn{P : participants list}
+	\KwExtraIn {InterKeys : previous intermediate key list}
+	\KwExtraIn {X : user's secret key}
+	\KwExtraIn {N : next participant}
+	\KwResult{Sends the new intermediate key list to the next participant}
+	\Begin{
+	inter\_key\_list := empty\_list
+
+	inter\_key\_list.append( InterKeys.last\_elem() )
+
+	\ForEach{k in InterKeys}
+	{
+		inter\_key\_list.append( $k^X$ )
+	}
+
+	send( N , P || inter\_key\_list)
+	}
+	\caption{Upflow Message send algorithm}
+	\label{upflow_algo}
+\end{algorithm}
+
+Algorithm \ref{downflow_algo} presents an overview of how the final, downflow message is constructed using the data received from the last upflow message.\\
+
+\begin{algorithm}[H]
+	\KwIn{P : participants list}
+	\KwExtraIn {InterKeys : previous intermediate key list}
+	\KwExtraIn {X : user's secret key}
+	\KwExtraIn {N : next participant}
+	\KwResult{Sends the downflow intermediate key list to the other participants}
+	\Begin{
+	inter\_key\_list := empty\_list
+
+	\ForEach{k in InterKeys}
+	{
+		inter\_key\_list.append( $k^X$ )
+	}
+
+	inter\_key\_list.reverse()
+
+	send( N , P || inter\_key\_list)
+	}
+	\caption{Downflow Message send algorithm}
+	\label{downflow_algo}
+\end{algorithm}\\
+
+\clearpage
+In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo} and \ref{downflow_algo}) are used in order to execute a complete run of the gka protocol.\\
+
+\begin{algorithm}[H]
+	\KwIn{P : participants list}
+	\KwOut{The shared secret}
+	\KwResult{Executes a GKA and produces the shared secret}
+	\Begin{
+
+	prev := get\_previous\_participant()
+
+	next := get\_next\_participant()
+
+	x := gka\_genkey()
+
+	\If{prev == NULL}{
+		send\_upflow(P, [G], x, next)
+		}
+	\Else{
+			m = receive\_from(prev)
+
+			\If{ m not valid}{
+					return error
+			}
+			\If{ next != NULL}{
+				send\_upflow(P, m.key\_list, x, next)
+			}
+			\Else{
+				final\_key := m.key\_list.last\_elem()
+
+				s := $final\_key^x$
+
+				send\_downflow(P, m.key\_list, x)
+
+				return s
+			}
+	}
+
+	m = wait\_for\_downflow()
+
+	\If{m not valid}{
+		return error
+	}
+
+	final\_key := m.key\_list[pos]
+
+	s := $final\_key^x$
+
+	return s
+
+	}
+	\caption{The GKA protocol}
+	\label{gka_proto_algo}
+\end{algorithm}
 
 \subsection{Attest}
 
