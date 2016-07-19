@@ -1,0 +1,391 @@
+\documentclass[12pt,titlepage,a4paper]{article}
+
+
+\usepackage{xunicode}
+\usepackage{amsthm}
+\usepackage{amsmath,empheq}
+\usepackage{xltxtra}
+%\usepackage{xgreek}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{unicode-math}
+\usepackage{framed}
+\usepackage[top=1in, bottom=1in, left=0.5in, right=0.5in]{geometry}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{ragged2e}
+\usepackage{indentfirst}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+%\newtheorem{apantisi}{Άσκηση}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\setmainfont{CMU Serif}
+
+\author{Andrikopoulos Konstantinos}
+\date{\today}
+\title{mpOTR protocol specification}
+
+\setcounter{secnumdepth}{6}
+
+\begin{document}
+
+
+\newcommand\NextYear{%
+  \advance\year by 1 \the\year\advance\year by -1}
+\newcommand\PrevYear{%
+  \advance\year by -1 \the\year\advance\year by 1}
+
+\begin{titlepage}
+\centering
+
+% Upper part of the page
+\includegraphics{Pyrforos.png}\\[1cm]
+%\textsc{\LARGE Σχολή \\ Ηλεκτρολόγων Μηχανικών \\[-3pt] και \\[6pt] Μηχανικών Υπολογιστών}
+
+
+% Branch
+
+\vspace{1cm}
+
+% Title
+\HRule \\[0.4cm]
+
+{\huge \bfseries Multiparty Off-The-Record chat protocol\\} %\\
+
+\vspace{0.4cm}
+\HRule \\[0.4cm]
+
+%Subtitle
+{\Large Protocol specification}
+
+
+% Authors
+\vfill
+\begin{center}
+\large
+%Add authors one after another with the same format
+%\begin{framed}
+Andrikopoulos Konstantinos\\
+Kolotouros Dimitrios
+
+%\end{framed}
+
+
+\vfill
+\the\year\
+
+\end{center}
+
+
+
+\end{titlepage}
+{
+\section{Overview}
+
+Our work is heavily based on the mpotr \cite{mpotr} paper. We try to specify
+the subprotocols mentioned in \cite{mpotr}. Namely we propose a Deniable
+Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman
+protocol CITE TRIPLE DH HERE, and as a  Group Key Agreement (GKA) we use the
+protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
+
+We also propose an improvement in the shutdown phase originally suggested in \cite{mpotr}
+utilising a relatively new cryptographic primitive called "cryptographic accumulator".
+
+\section{Setup}
+
+\subsection{Offer}
+\label{Offer}
+During this phase the participants calculate a unique session id called $sid_i$,
+for the current session.
+
+To do that, each participant $\hat{X}$ chooses a random 256-bit value $x_{\hat{X}}$ and broadcasts
+it to the other participants. Each participant caclulates the value $sid_i$,
+which is the SHA-512 hash of the serialized ordered list that contains every
+participant's contribution.
+
+Notice that these messages are not authenticated and hence the session id must
+be verified \emph{after} the participants have exchanged signing keys.
+
+
+
+\subsection{Deniable Signature Key Exchange (DSKE)}
+\label{DSKE}
+In \cite{mpotr} a construction for a DSKE is proposed. Given a deniable
+Authenticated Key Exchange\\ (denAKE), two participants of the chat can
+generate a deniable and authenticated shared secret. With that secret
+they can exchange their ephemeral signing public key in an encrypted and
+authenticated fashion, using symmetric algorithms.\\
+
+This is done for every pair of participants. After that, they will all have
+created an association table which associates each participants with their
+signing key. Afterwards the participants must make sure that they all have
+constructed the same association table. This is done by each participant
+transmitting the hash of the association table (which is sorted in
+lexicographical order according to each participant's username). The hash
+is signed by the ephemeral signing key.
+
+Each participating member must verify the signatures in each hash received and also
+make sure that each hash is the same with the one he has calculated. If everything
+checks out, then he is assured that the association table is the same.
+
+\subsubsection{denAKE}
+
+
+In \cite{mpotr} no denAKE is specified. We propose the following protocol:
+
+\begin{itemize}
+
+	\item[] Each participants generates a private/public Diffie-Hellman keypair $(A_i, g^{A_i})$, which
+will be used as a longterm key to idenitfy him to other participants. This
+is done only once, when a member first used the protocol, then the key remains
+the same for subsequent runs of the protocol.
+
+	\item[] To initiate a denAKE each participant creates an ephemeral Diffie-Hellman keypair
+		$(a_i,g^{a_i})$ used only in this run of the protocol (he uses however the same ephemeral key
+		to communicate with all the participants).
+
+	\item[] Then he broadcasts the public components of the longterm and ephemeral keys to
+		all chat participants in the tuple $(g^{A_i}, g^{a_i})$. We shall call this
+		message a "Handshake Message".
+
+	\item[] When participant $i$ has received a handshake Message $(g^{A_j}, g^{a_j})$ from some
+		other participant $j$, she can compute the shared secret, as specified by the triple
+		Diffie-Hellman protocol. This secret is $g^{a_ia_j} || g^{A_ia_j} || g^{A_ja_i}$
+		.
+
+	\item[] After computing the shared secret she encrypts and mac's a magic number and sends it
+		to the other party. This is done to verify that the other party has indeed generated
+		the same shared secret and is not an adversary trying to break the forward secrecy
+		property of triple Diffie-Hellman, see \ref{confirm_message_explain}. We shall call
+		this message a "Confirm Message".
+
+	\item[] When she herself has received the corresponding Confirm Message she is assured that
+		the shared secret can be safely used and there is no foul play. Now she
+		encrypts-then-macs her signing public key and sends it to the other party. This
+		message is called a "Key Message"
+
+
+	\item[] When a key message is received he first verifies the message using the same mac.
+		If the tag checks out he decrypts the key and adds it in the association table.
+\end{itemize}
+
+\paragraph{Order of the concatenation}
+When the shared secret is calculated, three values must be concatenated. Since
+concatenation is not commutative the two parties must agree on the order that the
+concatenation happens.
+
+This is achieved by compare the values $g^{A_i}$ and $g^{A_j}$. If
+$g^{A_i} \le g^{A_j}$ then the shared secret is $g^{a_ia_j} || g^{A_ia_j} || g^{A_ja_i}$
+If not then the shared secret is $g^{a_ia_j} || g^{A_ja_i} || g^{A_ia_j}$. That is, the
+value that is generated using the highest public key takes precedence during the
+concatenation.
+
+In the overview of the algorithm above, it was silently assumed that
+$g^{A_i} \le g^{A_j}$.
+
+\paragraph{The need of a confirmation message}
+\label{confirm_message_explain}
+A confirmation message is needed if want to have forward secrecy in this exchange.
+We must make sure that we are really speaking with the intended participant. Consider
+the following scenario.
+
+An adversary, Eve, creates an ephemeral keypair $(b, g^b)$. Then he poses as Bob to Alice,
+and broadcasts a handshake message containing $(g^B,g^b)$ where $g^B$ is Bob's
+public longterm key.
+
+After Alice receives the handshake message she can construct the shared secret. Eve
+however cannot construct the secret since she does not know Bob's longterm
+private key. If Alice starts sending data before confirming that the other party
+has indeed arrived at the same secret she is under the danger to lose the forward
+secrecy property for all messages she sends with the secret.
+
+Indeed the only reason Eve can't construct the secret that Alice calculated, is
+that she doesn't have Bob's longterm private key. This of course means that if
+she somehow gets a hold of this key, she can decrypt some messages. This situation
+of course does not satisfy the forward secrecy property.
+
+
+\subsubsection{Properties}
+
+Triple Diffie-Hellman is a protocol that is a) authenticated b) forward secret
+and c) deniable.
+
+It is authenticated, because the shared secret can only be calculated by someone
+only if he posses one of the longterm private keys (and the corresponding ephemeral
+of course).
+
+It is forward secret, because once the ephemeral key has been destroyed, it is
+impossible to reconstruct the shared secret even when the longterm
+private key is compromised.
+
+It is deniable, because the only values that are exchanged during a protocol run
+are the two public keys that a participant will use. Nothing is signed, which means
+that nothing can be used to prove that someone took part in a conversation.\\[0.5cm]
+
+Another property of this protocol that comes for free is its very fast key generation
+as, basically, any random number can be used as a secret key.
+
+Thus Triple Diffie-Hellman satisfies the properties required in \cite{mpotr} and
+can be used as a denAKE.
+
+
+\subsection{GKA}
+
+During this phase the participants derive a shared secret key $g_k$ to be used
+as a symmetric encryption key.
+
+The main idea is to compute a combined Diffie-Hellman-like key for all
+participants, which will then be used for encryption.
+
+To do this. each participant in the chatroom generates a private exponent.
+The shared base is then raised to this exponent. The key agreement begins
+by the initiating participant sending his public key to the next participant.
+
+In each step that follows, the participant who just received a list of intermediate
+keys from the previous participant must calculate the next intermediate key list and
+forward it to the next participant, until the final participant. These messages
+shall be called "Upflow Messages".
+
+During the $i$-th iteration, the corresponding participant receives keys from the
+$(i - 1)$th participant. and then sends information to the $(i + 1)$th participant.
+When the last participant has received the required information, he computes a)the
+shared secret and b) the final intermediate key list and then forwards it back to
+all previous participants. This message, containing the last intermediate key list
+shall be called "Downflow Message".
+
+The other participants now can also caclulate the shared secret and use it for
+encryption, using the intermediate key list.
+
+\subsubsection{Detailed description}
+For a more detailed description of the protocol we refer to \cite{mpenc}, however
+a pseudocode is provided.
+
+PUTGKAPSEUDOCODEHERE
+
+\subsection{Attest}
+
+During this phase the participants must verify that they agree on the $sid_i$,
+and the association table as we mentioned in \ref{Offer} and \ref{DSKE}.
+
+Each participant calculates the SHA-512 hash of the serialized association
+table and broadcasts an encrypted and authenticated message that contains
+both the $sid$ and the calculated hash. When each participant has received
+the attest messages of every other participant and that they agree with each
+others' values we can enter the communication phase.
+
+\section{Communication}
+
+During the communication phase, the participants can exchange authenticated
+and encrypted messages using the association table derived from DSKE and the
+symmetric encryption key $g_k$ derived from GKA.
+
+\subsection{Origin Authentication}
+
+For origin Authentication we will use public key encryption methods. This is
+done because use of symmetric algorithms would require a participant who
+wishes to send a message to mac the message $n-1$ times, where $n$ is the
+number of the participants.
+
+\subsubsection{Algorithm}
+
+While describing the DSKE we mentioned that an ephemeral signing key is transmitted
+by each participant to every other, to be used for message origin verification.
+
+For this purpose we make use of the EdDSA algorithm. This algorithm was selected
+for its fast key generation, since a new keypair must be generated in each protocol
+run, and its relatively small signature size.
+
+\subsubsection{Signing}
+
+The signature generation is the last step taken before sending a message. This
+way we can sign all the properties of the message to be sent, like the $sid$ or the
+recipient (if any). We also avoid any manifestations of the Cryptographic Doom
+Principle, which states that if a protocol tries to perform \emph{any}
+cryptographic operation before verifying the signature or mac on a received
+message, it will somehow fail catastrophically and lead to doom.
+
+Symmetrically the signature verification is the first thing that happens before
+any other operation is performed on the received message (cryptographic or not).
+
+\subsection{Encryption}
+
+For encryption a shared secret key is used by all the members. This is not a
+problem since the origin authentication is provided by the signatures, and
+we obviously don't mind any chat member to read a message or we wouldn't
+participate in the chat in the first place. For the actual encryption we
+use AES-128 in CTR mode.
+
+The use of the CTR mode however has a small pitfall. We must not let the same
+nonce be used twice. This is very difficult to achieve in a distributed setting
+like a multi-party chat protocol. Despite this we can solve the problem quite
+easily. We maintain our original idea of a shared master key, but we don't use
+it directly for encryption. Each participant uses the master key and his id in
+the chatroom, in order to compute his "personal" encryption key. This encryption
+key for participant $p$ is derived as follows:
+
+\[
+    K_e = H(ID_p || Key_m)
+\]
+
+Provided that $H$ is a cryptographic hash function, an adversary cannot recover
+the value $K$ used for encryption as long as he doesn't know the master key.
+}
+\section{Shutdown}
+
+During this phase, the participants end the current session and publish their
+ephemeral signing keys, to permit modifying the chat transcript. This adds to
+the protocol's deniability property. (Notice though, that the protocol is
+deniable without publishing the ephemeral signing keys.)
+
+A participant that wants to initiate the shutdown phase broadcasts an
+"End Message". The "End Message" indicates that the sender will no longer send
+any authenticated messages. All other participants broadcast an "End Message"
+as soon as the protocol determines there are no in-flight messages. When a
+participant has received "End Messages" from every other participant, he then
+sends a signing key reveal message, which contains his ephemeral signing key.
+
+\subsection{Implementation Notice}
+
+The reader should note that while in \cite{mpotr} a chatroom message consistency
+check is specified, it is not yet implemented in our protocol. This is done on
+purpose since we are still examining the possible optimization in the proposed
+method, which is discussed later in this document.
+
+It must also be made clear that at the moment the protocol does not protect
+from message reordering, both from an insider or an outsider to the group.
+
+Thus our protocol is at the time vulnerable both to message reordering and replay
+attacks. It is also possible for a participant to send different messages to
+different participants.
+
+When the shutdown phase is fully implemented the only possible attack would be
+to change the order that the messages appear in.
+
+\section{Message consistency in constant space}
+
+In \cite{mpotr} a straightforward approach is followed. In order to check if
+each participant has received the same set of messages all the messages from
+each user must be stored, and during the shutdown phase be lexicographically
+ordered and hashed. While this achieves our purpose it requires $O(M)$ space
+where $M$ is the number of messages.
+
+We believe that the same effect can be achieved in constant space by using
+cryptographic accumulators. One can find more about this primitive in \cite{accum_def}.
+
+Since such accumulators are collision free but at the same time quasi-commutative,
+they are ideal for our purposes. We can feed the accumulator with the incoming
+messages in whichever order they arrive at each participant. The quasi-commutative
+property guarantees that if two participants have received the same set of messages
+then their accumulators will arrive at the same value in the end.
+
+Thus, we have removed the need to store the messages in order to sort them during
+the shutdown phase. We only need to store the value of the accumulator which,
+of course, is constant.
+
+\bibliographystyle{plain}
+\bibliography{spec}
+
+\end{document}
