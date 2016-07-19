@@ -85,11 +85,9 @@ Kolotouros Dimitrios
 {
 \section{Overview}
 
-Our work is heavily based on the mpotr \cite{mpotr} paper. We try to specify
-the subprotocols mentioned in \cite{mpotr}. Namely we propose a Deniable
-Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman
-protocol CITE TRIPLE DH HERE, and as a  Group Key Agreement (GKA) we use the
-protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
+The goal of our project is to implement a library for private group conversations, as part of the Off-The-Record (OTR) library (libotr), which only offered private conversations between two participants. Our work is heavily based on the mpotr \cite{mpotr} paper. Following the OTR conventions, we use the term "private" to describe the properties of casual real-life conversations, namely confidentiality, authentication, repudiation and forward secrecy.
+
+In order to implement the mpOTR protocol described in \cite{mpotr}, we had to specify the subprotocols that were mentioned but not fully described. Namely we propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol CITE TRIPLE DH HERE, and as a  Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
 
 We also propose an improvement in the shutdown phase originally suggested in \cite{mpotr}
 utilising a relatively new cryptographic primitive called "cryptographic accumulator".
