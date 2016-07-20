@@ -371,12 +371,19 @@ In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo}
 
 During this phase the participants must verify that they agree on the $sid_i$,
 and the association table as we mentioned in \ref{Offer} and \ref{DSKE}.
+This is needed for two reasons. First because the session id is required before a signing key association table is constructed, and therefore the messages exchanged for the session id calculation can not be signed.
+Second because the participants need to verify that they all have the same view of the association table.\\
 
-Each participant calculates the SHA-512 hash of the serialized association
-table and broadcasts an encrypted and authenticated message that contains
-both the $sid$ and the calculated hash. When each participant has received
-the attest messages of every other participant and that they agree with each
-others' values we can enter the communication phase.
+\pagebreak
+Each participant calculates the SHA-512 hash of the serialized association table and broadcasts an encrypted and authenticated message that contains both the $sid$ and the calculated hash.
+To authenticate the message, the sender uses the ephemeral signing key he has now exchanged with the other participants.
+When each participant has received the attest messages from every other participant he must check two things.
+He must verify that the hashes of the serialized association table he has received from the other participants are the same with the hash he computed himself.
+He also must check that all participants have sent their messages using the same session id.\\
+
+Provided that SHA-512 is a cryptographic hash function an attacker cannot find two signing keys association tables with the same hash.
+This means that he is not able to make two participants believe that they have arrived at the same table when they have not.
+Also by signing the message with the specific session id, a user implicitly verifies that he is using that particular id for this session.
 
 \section{Communication}
 
