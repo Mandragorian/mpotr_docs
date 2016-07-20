@@ -1,11 +1,9 @@
 \documentclass[12pt,titlepage,a4paper]{article}
 
 
-\usepackage{xunicode}
 \usepackage{amsthm}
 \usepackage{amsmath,empheq}
 \usepackage{xltxtra}
-%\usepackage{xgreek}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{unicode-math}
@@ -90,7 +88,6 @@ Kolotouros Dimitrios
 \end{titlepage}
 {
 \section{Overview}
-
 The goal of our project is to implement a library for private group conversations, as part of the Off-The-Record (OTR) library (libotr), which only offered private conversations between two participants. Our work is heavily based on the mpotr \cite{mpotr} paper. Following the OTR conventions, we use the term "private" to describe the properties of casual real-life conversations, namely confidentiality, authentication, repudiation and forward secrecy.
 
 In order to implement the mpOTR protocol described in \cite{mpotr}, we had to specify the subprotocols that were mentioned but not fully described. Namely we propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol CITE TRIPLE DH HERE, and as a  Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
