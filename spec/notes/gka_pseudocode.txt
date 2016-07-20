@@ -1,0 +1,51 @@
+proc send_upflow( P : participants list; InterKeys : previous intermediate key list; X : key; N : next participant)
+  inter_key_list = []
+
+  inter_key_list.append( InterKeys.last_elem() )
+
+  foreach k in InterKeys:
+    inter_key_list.append( k^X )
+
+  send(N, P || inter_key_list)
+
+
+proc send_downflow( P : participants list; InterKeys : previous intermediate key list; X : key)
+  inter_key_list = []
+
+  foreach k in InterKeys:
+    inter_key_list.append(k^X)
+
+  inter_key_list.reverse()
+
+  broadcast(P, P || inter_key_list)
+
+
+Secret GKA( P : participants list)
+  Participant prev = get_previous(P)
+  Participant next = get_next(P)
+  Position pos = get_pos(P)
+
+  Secret s = NULL
+
+  Key x = get_key_for_GKA()
+
+  if prev = NULL
+    send_upflow(P, [G], x, next)
+  else
+    Message m = receive_from(prev)
+    if m is not valid
+      return error
+    if next != NULL
+      send_upflow(P, m.key_list, x, next)
+    else
+      s = (m.key_list.last_elem())^x
+      m.key_list.drop_last_elem()
+      send_downflow(P, m.key_list,x)
+      return s
+
+  m = wait_for_downflow()
+  if m is not valid
+    return error
+
+  s = (m.key_list[pos])^x
+  return s
