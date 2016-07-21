@@ -99,6 +99,15 @@ utilising a relatively new cryptographic primitive called "cryptographic accumul
 \label{threat_model}
 In \cite{mpotr} a threat model was specified. Specifically three adversaries are introduced.
 
+\subsection{Security adversary $\mathcal{O}$}
+This adversary's goal is to read the messages of the chatroom.
+Let $T_c^{\hat{X}}$ be the transcript of chatroom $c$ owned by participant $\hat{X}$.
+Then $\mathcal{O}$ is successful if he can read any message from transcript $T_c^{\hat{A}}$, where $\hat{A}$ is an honest participant, without receiving it from transcript $T_c^{\hat{X}}$ for any participant $\hat{X}$ where $\hat{X} \ne \hat{A}$.
+While $\mathcal{O}$ can, both passively and actively, control the network, decrypt messages sent in other chatrooms and even participate in other sessions he has limited access on the room he wants to attack.
+Not only can he not participate in the session under attack, but he also cannot ask for any secret shared between the participants of the specific room.
+He has the ability to inject messages of his liking in the chatroom by asking an, otherwise honest, user.
+In essence $\mathcal{O}$ is a somewhat formal definition of the notion of IND-CPA attacks in the multiparty setting.
+
 \section{Setup}
 
 \subsection{Offer}
