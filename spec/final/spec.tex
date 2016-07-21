@@ -14,8 +14,8 @@
 \usepackage{ragged2e}
 \usepackage{indentfirst}
 \usepackage[algoruled]{algorithm2e}
-\usepackage{tikz}
-\usetikzlibrary{arrows}
+\usepackage[keys]{cryptocode}
+\usepackage{float}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
@@ -109,11 +109,11 @@ The participant who wants to initiate the mpOTR protocol, broadcasts an offer me
 
 \begin{itemize}
 	\item[]He checks if the sender's position contained in the message matches his actual position, if not, he rejects the message.
-	
+
 	\item[]He checks if he has already received an offer message from the sender, if so, he rejects the message.
 
 	\item[]He checks if he has already broadcast his own offer message. If not, creates and broadcasts his own offer message.
-	
+
 	\item[]He checks if he has received every participant's contribution. If so, he calculates the $sid_i$ and proceeds to the next setup phase.
 \end{itemize}
 
@@ -121,6 +121,7 @@ Notice that these messages are not authenticated and hence the session id must
 be verified \emph{after} the participants have exchanged signing keys.
 
 
+\clearpage
 \subsection{Deniable Signature Key Exchange (DSKE)}
 \label{DSKE}
 In \cite{mpotr} a construction for a DSKE is proposed. Given a deniable
@@ -182,6 +183,8 @@ the same for subsequent runs of the protocol.
 		If the tag checks out he decrypts the key and adds it in the association table.
 \end{itemize}
 
+In figure \ref{den_ake_schematic} a schematic description of the protocol is provided.
+
 \paragraph{Order of the concatenation}
 When the shared secret is calculated, three values must be concatenated. Since
 concatenation is not commutative the two parties must agree on the order that the
@@ -241,7 +244,41 @@ as, basically, any random number can be used as a secret key.
 Thus Triple Diffie-Hellman satisfies the properties required in \cite{mpotr} and
 can be used as a denAKE.
 
+\begin{figure}[t]
+  \fbox{%
+    \pseudocode{%
+      \textbf{Alice} \< \< \textbf{Bob} \\[][\hline]
+      \text{ Choose a random number $x \in Z_p^*$ }\< \< \\
+      \< \sendmessageright*{Send \ \left(g^x,g^X\right)} \< \\
+      \< \< \text{ Choose a random number $y \in Z_p^*$ } \\
+      \< \< s = g^{xy} || g^{Xy} || g^{Yx} \\
+      \< \< k_1 = KDF_1(s) \\
+      \< \< k_2=KDF_2(s) \\
+      \< \sendmessageleft*{Send \ \left(g^y,g^Y\right)} \< \\
+      s = g^{xy} || g^{Xy} || g^{Yx} \< \< \\
+      k_1 = KDF_1(s) \< \< \\
+      k_2 = KDF_2(s) \< \< \\
+      \< \sendmessageright*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
+      \< \< \text{Verify mac} \\
+      \< \< m = AES^{-1}_{k_1}(c) \\
+      \< \< \text{Verify m = "confirm"} \\
+      \< \sendmessageleft*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
+      \text{Verify mac} \< \< \\
+      m = AES^{-1}_{k_1}(c) \< \< \\
+      \text{Verify m = "confirm"} \\
+      \< \sendmessageright*{Send \\ c = AES_{k_1}(\pk_a) \\ MAC_{k_2}(c) } \< \\
+      \< \< \text{Verify mac} \\
+      \< \< \text{Add $\pk_a$ to association table} \\
+      \< \sendmessageleft*{Send \\ c = AES_{k_1}(\pk_b) \\ MAC_{k_2}(c) } \< \\
+      \text{Verify mac} \< \<  \\
+      \text{Add $\pk_b$ to association table} \< \< \\
+    }
+  }
+  \caption{The denAKE protocol, where $X$ and $Y$ are the private parts of the long term keys}
+  \label{den_ake_schematic}
+\end{figure}
 
+\clearpage
 \subsection{GKA}
 
 During this phase the participants derive a shared secret key $g_k$ to be used
@@ -275,6 +312,11 @@ a pseudocode is provided.\\
 
 Algorithm \ref{upflow_algo} presents an overview of how each upflow message is constructed, using the data received from the previous upflow message.\\
 
+Algorithm \ref{downflow_algo} presents an overview of how the final, downflow message is constructed using the data received from the last upflow message.\\
+
+
+In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo} and \ref{downflow_algo}) are used in order to execute a complete run of the gka protocol.\\
+
 \begin{algorithm}[H]
 	\KwIn{P : participants list}
 	\KwExtraIn {InterKeys : previous intermediate key list}
@@ -297,8 +339,6 @@ Algorithm \ref{upflow_algo} presents an overview of how each upflow message is c
 	\label{upflow_algo}
 \end{algorithm}
 
-Algorithm \ref{downflow_algo} presents an overview of how the final, downflow message is constructed using the data received from the last upflow message.\\
-
 \begin{algorithm}[H]
 	\KwIn{P : participants list}
 	\KwExtraIn {InterKeys : previous intermediate key list}
@@ -320,9 +360,6 @@ Algorithm \ref{downflow_algo} presents an overview of how the final, downflow me
 	\caption{Downflow Message send algorithm}
 	\label{downflow_algo}
 \end{algorithm}
-
-\clearpage
-In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo} and \ref{downflow_algo}) are used in order to execute a complete run of the gka protocol.\\
 
 \begin{algorithm}[H]
 	\KwIn{P : participants list}
@@ -376,6 +413,7 @@ In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo}
 	\label{gka_proto_algo}
 \end{algorithm}
 
+\clearpage
 \subsection{Attest}
 
 During this phase the participants must verify that they agree on the $sid_i$,
@@ -383,7 +421,6 @@ and the association table as we mentioned in \ref{Offer} and \ref{DSKE}.
 This is needed for two reasons. First because the session id is required before a signing key association table is constructed, and therefore the messages exchanged for the session id calculation can not be signed.
 Second because the participants need to verify that they all have the same view of the association table.\\
 
-\pagebreak
 Each participant calculates the SHA-512 hash of the serialized association table and broadcasts an encrypted and authenticated message that contains both the $sid$ and the calculated hash.
 To authenticate the message, the sender uses the ephemeral signing key he has now exchanged with the other participants.
 When each participant has received the attest messages from every other participant he must check two things.
