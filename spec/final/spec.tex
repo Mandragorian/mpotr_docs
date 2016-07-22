@@ -453,7 +453,7 @@ For this purpose we make use of the EdDSA algorithm. This algorithm was selected
 for its fast key generation, since a new keypair must be generated in each protocol
 run, and its relatively small signature size.
 
-\subsubsection{Signing}
+\subsubsection{Signing} \label{signing}
 
 The signature generation is the last step taken before sending a message. This
 way we can sign all the properties of the message to be sent, like the $sid$ or the
@@ -539,6 +539,144 @@ then their accumulators will arrive at the same value in the end.
 Thus, we have removed the need to store the messages in order to sort them during
 the shutdown phase. We only need to store the value of the accumulator which,
 of course, is constant.
+
+
+\section{Message Structure}
+
+All mpOTR messages start with the OTR label ("OTR:"), followed by the base64 encoded message content and end with a trailing dot ("."). The actual content of the mpOTR message consists of a header, a body and possibly a signature.
+
+The header is the portion of each message which structure is common in all types of mpOTR messages. The Offer Message being the only exception, because its header contains no sid in the header.
+
+The body is the portion of each message which structure differs between different mpOTR message types.
+
+The signature is used to authenticate the header and the body, as described in section \ref{signing}. It's not existant in Offer Messages, DAKE Messages and Shutdown Key Release Messages.
+
+\subsection{Data Types}
+\begin{tabular}{l l l}
+Type & Name & Description \\
+\hline
+Byte & BYTE & byte \\
+Short & SHORT & 2 byte unsigned value, big-endian \\
+Integer & INT & 4 byte unsigned value, big-endian \\
+Multi-precision integer & MPI & 4 byte unsigned len, big-endian / len byte value \\
+CTR-mode counter value & CTR & 8 bytes data \\
+Session Id Contribution & SID\_CONTR & 32 bytes data \\
+Session Id & SID & 64 bytes data \\
+Opaque variable length data & DATA & 4 byte unsigned len, big endian / len byte data \\
+Triple D-H MAC & TDH\_MAC & 32 bytes data \\
+Association Table Hash & AT\_HASH & 64 bytes data \\
+List & LIST(TYPE) & 4 byte unsigned len, big endian, len elements of TYPE \\
+\end{tabular}
+
+\subsection{Message Header}
+
+\begin{tabular}{l l l}
+Name         & Type  & Description \\
+\hline
+protoVersion & SHORT & The version of the mpOTR Protocol used to create the message. \\
+msgType      & BYTE  & The type of the message. \\
+senderInsTag & INT   & The sender's Instance Tag. \\
+chatInsTag   & INT   & A predefined value that indicates that it is a chat message. \\
+sid          & SID   & (Optional) The Session Id of the session that this message is intended for. \\
+\end{tabular}
+
+\subsubsection{Message Types}
+The following values of the msgType field are used to indicate each message type, as shown in the table below:
+
+\begin{tabular}{r l}
+Value & Message Type \\
+\hline
+1 & Offer Message \\
+2 & DAKE Handshake Message \\
+3 & DAKE Confirm Message \\
+4 & DAKE Key Message \\
+5 & GKA Upflow Message \\
+6 & GKA Downflow Message \\
+7 & Attest Message \\
+8 & Data Message \\
+9 & Shutdown End Message \\
+10 & Shutdown Key Release Message \\
+\end{tabular}
+
+\subsection{Message Body}
+
+\subsubsection{Offer Message}
+\begin{tabular}{l l l}
+Name            & Type       & Description \\
+\hline
+position        & INT        & The position the sender believes he has in the participants list. \\
+sidContribution & SID\_CONTR & The random sid contribution that the sender has choosen. \\
+\end{tabular}
+
+
+\subsubsection{DAKE Handshake Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+ephemPubKey & MPI       & The public part of the ephemeral key. \\
+longPubKey  & MPI       & The public part of the long term signing key. \\
+\end{tabular}
+
+\subsubsection{DAKE Confirm Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+recipient   & INT       & The position of the recipient this message is intended for. \\
+tdhMac      & TDH\_MAC  & The Triple Diffie-Hellman MAC. \\
+\end{tabular}
+
+\subsubsection{DAKE Key Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+recipient   & INT       & The position of the recipient this message is intended for. \\
+tdhMac      & TDH\_MAC  & The Triple Diffie-Hellman MAC. \\
+key         & MPI       & The DAKE Key. \\
+\end{tabular}
+
+\subsubsection{GKA Upflow Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+recipient   & INT       & The position of the recipient this message is intended for. \\
+interKeys   & LIST(MPI) & The GKA intermediate key list. \\
+\end{tabular}
+
+\subsubsection{GKA Downflow Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+interKeys   & LIST(MPI) & The GKA intermediate key list. \\
+\end{tabular}
+
+\subsubsection{Attest Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+sid         & SID       & The Session Id. \\
+at\_hash     & AT\_HASH  & The Association Table hash. \\
+\end{tabular}
+
+\subsubsection{Data Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+ctr         & CTR       & The CTR-Mode counter. \\
+ciphertext  & DATA      & The encrypted message. \\
+\end{tabular}
+
+\subsubsection{Shutdown End Message}
+The Shutdown End Message has an empty body.
+
+\subsubsection{Shutdown Key Release Message}
+\begin{tabular}{l l l}
+Name        & Type      & Description \\
+\hline
+key         & MPI       & The Key to be released. \\
+\end{tabular}
+
+\subsection{Message Signature}
+
 
 \bibliographystyle{plain}
 \bibliography{spec}
