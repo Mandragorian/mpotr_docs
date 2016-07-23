@@ -582,6 +582,12 @@ Thus, we have removed the need to store the messages in order to sort them durin
 the shutdown phase. We only need to store the value of the accumulator which,
 of course, is constant.
 
+\section{Participants ordering}
+
+In many cases, the protocol demands some ordering of the participants. For example, in the Offer step of the Setup phase, the sid contributions should be concatenated in some order before hashing them. Same stands for the public signing keys in the association table, during the Attest step. So we define an ordering rule for the participants, that is used whenever an ordering of elements corresponding to participants is needed. \\
+
+Given that the application provides the mpOTR protocol with a unique name describing each participant, we make the convention that every ordering of the participants list is made lexicographically based on that unique name. We also define the position of the participant, as his position in this order, starting counting from zero (0). 
+
 
 \section{Message Structure}
 
