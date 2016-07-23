@@ -591,13 +591,16 @@ Given that the application provides the mpOTR protocol with a unique name descri
 
 \section{Message Structure}
 
-All mpOTR messages start with the OTR label ("OTR:"), followed by the base64 encoded message content and end with a trailing dot ("."). The actual content of the mpOTR message consists of a header, a body and possibly a signature.
+All mpOTR messages start with the OTR label ("OTR:"), followed by the base64 encoded message content and end with a trailing dot ("."). The actual content of the mpOTR message consists of the following elements: \\
 
-The header is the portion of each message which structure is common in all types of mpOTR messages. The Offer Message being the only exception, because its header contains no sid in the header.
+\begin{itemize}
+	\item[•]The header, which is the portion of each message which structure is common in all types of mpOTR messages. The Offer Message being the only exception, because its header contains no sid in the header.
+	
+	\item[•]The body, which is the portion of each message which structure differs between different mpOTR message types.
+	
+	\item[•]The signature, which is used to authenticate the header and the body, as described in section \ref{signing}. It's not existant in Offer Messages, DAKE Messages and Shutdown Key Release Messages.
+\end{itemize}
 
-The body is the portion of each message which structure differs between different mpOTR message types.
-
-The signature is used to authenticate the header and the body, as described in section \ref{signing}. It's not existant in Offer Messages, DAKE Messages and Shutdown Key Release Messages.
 
 \subsection{Data Types}
 \begin{tabular}{l l l}
