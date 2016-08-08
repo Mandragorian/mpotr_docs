@@ -586,8 +586,34 @@ of course, is constant.
 
 In many cases, the protocol demands some ordering of the participants. For example, in the Offer step of the Setup phase, the sid contributions should be concatenated in some order before hashing them. Same stands for the public signing keys in the association table, during the Attest step. So we define an ordering rule for the participants, that is used whenever an ordering of elements corresponding to participants is needed. \\
 
-Given that the application provides the mpOTR protocol with a unique name describing each participant, we make the convention that every ordering of the participants list is made lexicographically based on that unique name. We also define the position of the participant, as his position in this order, starting counting from zero (0). 
+Given that the application provides the mpOTR protocol with a unique name describing each participant, we make the convention that every ordering of the participants list is made lexicographically based on that unique name. We also define the position of the participant, as his position in this order, starting counting from zero (0).
 
+\section{Identity Verification}
+The identity of a participant is verified during the DSKE phase.
+In order for a participant to be verified the fingerprint of his longterm key must be stored in the known fingerprints file, and be explicitly marked as verified.
+In our implementation this file is comma separated and is of the form:
+
+\begin{verbatim}
+<account_name>,<protocol>,<buddy_name>,<fingerprint>,<is_verified>
+\end{verbatim}
+
+The account name is the "address" of the library user in the form username@host, and is provided by the application.
+The protocol is a string that is characteristic of the underlying protocol that the specific account uses.
+It is again provided by the application.
+The buddy name is the nickname that a user is identified with.
+For the time being it is the username part of a users "address".
+This implies that the underlying protocol provides addresses which do not change often for a user.
+It also means that users from multiple hosts are not allowed or else two users with the same username might conflict.
+The above holds for a protocol like jabber for example, but is not the case for protocols like IRC.
+As a result our implementation is not fully protocol agnostic at this moment.
+Finally the fingerprint is the sha256 hash of the public identity key, and the last field is 1 if the key is verified and 0 otherwise.
+
+This file is read during the plugin start up and initializes the list of all known fingerprints.
+When a new chatroom is created, each participant is assigned a list with all known fingerprints used by this participant (from the above list).
+When a "Handshake Message" is received the participants known fingerprints list is checked to find (if it exists) a fingerprint matching the currently used public key.
+If such a fingerprint is found and it is verified, then the user is verified for this session.
+If the found fingerprint is not verified then the participant is not verified.
+If no key is found then again the participant is not verified and an entry for this new key is added in the known fingerprints list.
 
 \section{Message Structure}
 
@@ -595,9 +621,9 @@ All mpOTR messages start with the OTR label ("OTR:"), followed by the base64 enc
 
 \begin{itemize}
 	\item[•]The header, which is the portion of each message which structure is common in all types of mpOTR messages. The Offer Message being the only exception, because its header contains no sid in the header.
-	
+
 	\item[•]The body, which is the portion of each message which structure differs between different mpOTR message types.
-	
+
 	\item[•]The signature, which is used to authenticate the header and the body, as described in section \ref{signing}. It's not existant in Offer Messages, DAKE Messages and Shutdown Key Release Messages.
 \end{itemize}
 
