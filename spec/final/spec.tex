@@ -175,7 +175,6 @@ Notice that these messages are not authenticated and hence the session id must
 be verified \emph{after} the participants have exchanged signing keys.
 
 
-\clearpage
 \subsection{Deniable Signature Key Exchange (DSKE)}
 \label{DSKE}
 In \cite{mpotr} a construction for a DSKE is proposed. Given a deniable
@@ -392,6 +391,7 @@ In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo}
 	\label{upflow_algo}
 \end{algorithm}
 
+\vfill
 \begin{algorithm}[H]
 	\KwIn{P : participants list}
 	\KwExtraIn {InterKeys : previous intermediate key list}
@@ -466,7 +466,6 @@ In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo}
 	\label{gka_proto_algo}
 \end{algorithm}
 
-\clearpage
 \subsection{Attest}
 
 During this phase the participants must verify that they agree on the $sid_i$,
