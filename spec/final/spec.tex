@@ -582,6 +582,39 @@ This message signifies that the sender will not user the channel to send any mes
 As a result when a participant receives an "End Message" from all other participants, he is certain that he can release his signing secret key.
 Now anyone who intercepts the released key can forge chat-room messages.
 However all the participants will no longer accept messages signed with the released secret key, and thus it cannot be used to impersonate its previous owner.
+
+\section{Putting it all together}
+Using the subprotocols described above we have this protocol:
+
+\begin{algorithm}[H]
+  \KwIn{$\mathcal{P}$ : participants list}
+	\KwResult{Executes a run of the mpOTR protocol}
+	\Begin{
+
+  $sid$ := Offer($\mathcal{P}$)
+
+  $\mathcal{S}$ := DSKE($sid$, $\mathcal{P}$)
+
+  $\mathcal{K}$ := GKA($sid$, $\mathcal{S}$, $\mathcal{P}$)
+
+  $\mathcal{T}$ := Communication($sid$, $\mathcal{K}$, $\mathcal{S}$, $\mathcal{P}$)
+
+  $c$ := Shutdown($sid$, $\mathcal{T}$, $\mathcal{S}$, $\mathcal{P}$)
+
+  \If{$c$ = "consensus"}{
+    \Return{"OK"}
+  }
+  \Else{
+    \Return{"Error"}
+  }
+
+	}
+	\caption{The mpOTR protocol}
+	\label{mpotr_algo}
+\end{algorithm}
+
+Where $sid$ is the session id, $\mathcal{S}$ is the signing keys association table, $\mathcal{K}$ is the group shared secret, $\mathcal{T}$ is the transcript of the chatroom and finally $c$ s a boolean value which states if consensus has been reached with all participants.
+
 \subsection{Implementation Notice}
 
 The reader should note that while in \cite{mpotr} a chatroom message consistency
