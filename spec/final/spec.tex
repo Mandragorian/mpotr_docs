@@ -99,9 +99,21 @@ Kolotouros Dimitrios
 \newpage
 {
 \section{Overview}
-The goal of our project is to implement a library for private group conversations, as part of the Off-The-Record (OTR) library (libotr), which only offered private conversations between two participants. Our work is heavily based on the mpotr \cite{mpotr} paper. Following the OTR conventions, we use the term "private", in order to describe the properties of casual real-life conversations, namely confidentiality, authentication, repudiation and forward secrecy.
+The goal of our project is to implement a library for private group conversations.
+This library is implemented as part of the Off-The-Record (OTR) library (libotr), which only offered private conversations between two participants.
+Our work is heavily based on the mpotr paper \cite{mpotr}.
+Following the OTR conventions, the term "private" is used to describe the properties of casual real-life conversations:
 
-In order to implement the mpOTR protocol described in \cite{mpotr}, we had to specify the subprotocols that were mentioned but were not fully described. Namely, we propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol CITE TRIPLE DH HERE, and as a  Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
+\begin{itemize}
+  \item confidentiality
+  \item authentication
+  \item repudiation
+  \item forward secrecy.
+\end{itemize}
+
+In order to implement the mpOTR protocol described in \cite{mpotr}, we had to specify the subprotocols that were treated as black boxes and not fully described.
+We propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol CITE TRIPLE DH HERE.
+For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc} but using classic Diffie-Hellman (ie not ECDH).
 
 We also propose an improvement in the shutdown phase originally suggested in \cite{mpotr},
 utilising a relatively new cryptographic primitive called "cryptographic accumulator".
