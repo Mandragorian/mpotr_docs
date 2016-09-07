@@ -547,13 +547,29 @@ ephemeral signing keys, to permit modifying the chat transcript. This adds to
 the protocol's deniability property. (Notice though, that the protocol is
 deniable without publishing the ephemeral signing keys.)
 
-A participant that wants to initiate the shutdown phase broadcasts an
-"End Message". The "End Message" indicates that the sender will no longer send
-any authenticated messages. All other participants broadcast an "End Message"
-as soon as the protocol determines there are no in-flight messages. When a
-participant has received "End Messages" from every other participant, he then
-sends a signing key reveal message, which contains his ephemeral signing key.
+For a session to be terminated, a "Shutdown Message" is sent.
+This message signals to other participants that the shutdown phase should be initiated.
+It contains the  hash of all the messages sent by the user sending the "Shutdown Message".
+When a user receives a "Shutdown Message", he also sends a "Shutdown Message" containing his own messages hash.
+If he has already sent his "Shutdown Message" then he does nothing new.
 
+When one participant has received a "Shutdown Message" from all other participants he can send a "Digest Message".
+This message contains a digest of all the messages in the chat-room and is calculated as follows:
+\begin{itemize}
+  \item[] Sort the participants using their usernames in lexicographic order.
+  \item[] For each participant $i$ (in that order) calculate the hash $h_i = H(S_i)$, where $S_i$ is set of all the messages sent by this user (sorted in lexicographic order).
+  \item[] Calculate the digest $h = H(h_1 || h_2 \dots || h_N)$, where N is the number of participants.
+\end{itemize}
+
+When one participant receives a "Digest Message" from some other participant he checks whether the two of them agree on the chat-room transcript.
+He simply compares the digest he computed locally to the one sent by the other participant.
+He deduces that consensus is reached only if the two digests are the same.
+
+When one participant has received a "Digest Message" from every other participant he broadcasts an "End Message".
+This message signifies that the sender will not user the channel to send any messages anymore.
+As a result when a participant receives an "End Message" from all other participants, he is certain that he can release his signing secret key.
+Now anyone who intercepts the released key can forge chat-room messages.
+However all the participants will no longer accept messages signed with the released secret key, and thus it cannot be used to impersonate its previous owner.
 \subsection{Implementation Notice}
 
 The reader should note that while in \cite{mpotr} a chatroom message consistency
