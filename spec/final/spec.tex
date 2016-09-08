@@ -552,6 +552,19 @@ key for participant $p$ is derived as follows:
 Provided that $H$ is a cryptographic hash function, an adversary cannot recover
 the value $K$ used for encryption as long as he doesn't know the master key.
 }
+
+\subsection{Transcript}
+
+In order to execute the shutdown protocol we need to store the transcript of the chatroom.
+In reality a seperate transcript is held for the messages from each participant.
+The shutdown protocol will then combine all the different transcripts to determine if consensus has been reached.
+
+The transcript is implemented as a linked list. The list is kept sorted in lexicographic order.
+When a message is to be added in a transcript list, the list is searched linearly to find the position the new message should be placed.
+
+When user $A$ sends a message he adds that message to the transcript corresponding to himself.
+When he receives a message from user $B$ then he adds that message to the transcript corresponding to user $B$.
+
 \section{Shutdown}
 
 During this phase, the participants end the current session and publish their
