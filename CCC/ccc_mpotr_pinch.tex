@@ -231,6 +231,40 @@ After all, participants have exchanged signing keys with each other in the manne
 
 A schematic description of the protocol can be seen in figure \ref{den_ake_schematic}.
 
+\begin{figure}[H]
+  \fbox{%
+    \pseudocode{%
+      \textbf{Alice} \< \< \textbf{Bob} \\[][\hline]
+      \text{ Choose a random number $x \in Z_p^*$ }\< \< \\
+      \< \sendmessageright*{Send \ \left(g^x,g^X\right)} \< \\
+      \< \< \text{ Choose a random number $y \in Z_p^*$ } \\
+      \< \< s = g^{xy} || g^{Xy} || g^{Yx} \\
+      \< \< k_1 = KDF_1(s) \\
+      \< \< k_2=KDF_2(s) \\
+      \< \sendmessageleft*{Send \ \left(g^y,g^Y\right)} \< \\
+      s = g^{xy} || g^{Xy} || g^{Yx} \< \< \\
+      k_1 = KDF_1(s) \< \< \\
+      k_2 = KDF_2(s) \< \< \\
+      \< \sendmessageright*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
+      \< \< \text{Verify mac} \\
+      \< \< m = AES^{-1}_{k_1}(c) \\
+      \< \< \text{Verify m = "confirm"} \\
+      \< \sendmessageleft*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
+      \text{Verify mac} \< \< \\
+      m = AES^{-1}_{k_1}(c) \< \< \\
+      \text{Verify m = "confirm"} \\
+      \< \sendmessageright*{Send \\ c = AES_{k_1}(\pk_a) \\ MAC_{k_2}(c) } \< \\
+      \< \< \text{Verify mac} \\
+      \< \< \text{Add $\pk_a$ to association table} \\
+      \< \sendmessageleft*{Send \\ c = AES_{k_1}(\pk_b) \\ MAC_{k_2}(c) } \< \\
+      \text{Verify mac} \< \<  \\
+      \text{Add $\pk_b$ to association table} \< \< \\
+    }
+  }
+  \caption{The messages exchanged between two users in order to authenticate each other's signing keys. $X$ and $Y$ are the private parts of the long term keys. $KDF_1$ and $KDF_2$ are two key derivation functions.}
+  \label{den_ake_schematic}
+\end{figure}
+
 \subsection{GKA}
 \label{gka_subprot}
 For a GKA we use the protocol as specified in \cite{mpenc}.
@@ -261,39 +295,6 @@ In algorithms \ref{upflow_algo}, \ref{downflow_algo}, \ref{gka_proto_algo} the m
 	\label{upflow_algo}
 \end{algorithm}
 
-\begin{figure}[h]
-  \fbox{%
-    \pseudocode{%
-      \textbf{Alice} \< \< \textbf{Bob} \\[][\hline]
-      \text{ Choose a random number $x \in Z_p^*$ }\< \< \\
-      \< \sendmessageright*{Send \ \left(g^x,g^X\right)} \< \\
-      \< \< \text{ Choose a random number $y \in Z_p^*$ } \\
-      \< \< s = g^{xy} || g^{Xy} || g^{Yx} \\
-      \< \< k_1 = KDF_1(s) \\
-      \< \< k_2=KDF_2(s) \\
-      \< \sendmessageleft*{Send \ \left(g^y,g^Y\right)} \< \\
-      s = g^{xy} || g^{Xy} || g^{Yx} \< \< \\
-      k_1 = KDF_1(s) \< \< \\
-      k_2 = KDF_2(s) \< \< \\
-      \< \sendmessageright*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
-      \< \< \text{Verify mac} \\
-      \< \< m = AES^{-1}_{k_1}(c) \\
-      \< \< \text{Verify m = "confirm"} \\
-      \< \sendmessageleft*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
-      \text{Verify mac} \< \< \\
-      m = AES^{-1}_{k_1}(c) \< \< \\
-      \text{Verify m = "confirm"} \\
-      \< \sendmessageright*{Send \\ c = AES_{k_1}(\pk_a) \\ MAC_{k_2}(c) } \< \\
-      \< \< \text{Verify mac} \\
-      \< \< \text{Add $\pk_a$ to association table} \\
-      \< \sendmessageleft*{Send \\ c = AES_{k_1}(\pk_b) \\ MAC_{k_2}(c) } \< \\
-      \text{Verify mac} \< \<  \\
-      \text{Add $\pk_b$ to association table} \< \< \\
-    }
-  }
-  \caption{The messages exchanged between two users in order to authenticated each other signing keys. $X$ and $Y$ are the private parts of the long term keys}
-  \label{den_ake_schematic}
-\end{figure}
 
 
 
@@ -401,7 +402,6 @@ Each message is signed as a whole.
 This means that the signature covers the message and any metadata sent, like session id, counter value etc.
 %------------------------------------------------
 
-\clearpage
 \section{The Plugin}
 Now lets see in summary the workflow of the plugin.
 
