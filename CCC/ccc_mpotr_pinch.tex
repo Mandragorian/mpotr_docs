@@ -125,11 +125,7 @@ In this article, we briefly introduce a completed mpOTR protocol and our efforts
 \lettrine[nindent=0em,lines=3]{T}he goal of our project is to implement a library for private group conversations.
 In addition, we develop a pidgin plugin, that uses this library in order to allow pidgin users to communicate in a familiar environment.
 
-The library is implemented as part of the Off-The-Record (OTR) library (libotr), which,until now, only offered private conversations between two participants.
-
-The plugin is based on the pidgin-otr plugin, developed by the OTR community.
-
-Our work is heavily based on the mpotr paper \cite{mpotr}.
+Our work is heavily based on the mpOTR paper \cite{mpotr}.
 Following the OTR conventions, the term "private" is used to describe the properties of casual real-life conversations:
 
 \begin{itemize}
@@ -183,7 +179,7 @@ For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc}, bu
 \end{algorithm}
 
 In algorithm 1, we illustrate the protocol behaviour.
-The whole protocol has been devided into sequential phases, which we call sub-protocols.
+The whole protocol has been divided into sequential phases, which we call sub-protocols.
 The first four of them (Offer, DSKE and GKA, Attest) are responsible for setting up all the needed parameters, for the private communication to take place.
 The Communication sub-protocol is the one that governs the actual private group conversation.
 Finally, the Shutdown sub-protocol is responsible for every action that needs to be done before ending each private session.
@@ -197,20 +193,21 @@ Each participant generates an ephemeral signing key, that he will be using in or
 Then, every participant exchanges their ephemeral signing keys with every other participant, using a Deniable Authenticated Key Exchange (DAKE) algorithm.
 When all exchanges have taken place, every participant has created the association table.
 The ephemeral signing keys to be used in this session are deniable.
-The DSKE sub-protcol and the DAKE are described in more detail in (\ref{dske_subprot})
+The DSKE sub-protocol and the DAKE are described in more detail in (\ref{dske_subprot})
 
 During the GKA sub-protocol, the participants generate a shared key K that will be used to derive encryption keys.
-These keys, in turn, will be used to encrypt the messages during this session.
-The GKA sub-protcol is described in more detail in (\ref{gka_subprot}).
+The derived keys, in turn, will be used to encrypt the messages during this session.
+The GKA sub-protocol is described in more detail in (\ref{gka_subprot}).
 
-During the Attest sub-protcol, the participants authenticate the session id sid and ensure that they agree on the association table S.
+During the Attest sub-protocol, the participants authenticate the session id sid and ensure that they agree on the association table S.
 
 During the Communication sub-protocol, the actual private conversation takes place.
 The users use the shared secret K, ephemeral signing keys and the association table S, in order to encrypt and authenticate their messages.
-When this phase is finished, a trascript of the chat room T is returned, which contains all the messages of the chatroom, by participant.
+When this phase is finished, a transcript of the chat room T is returned, which contains all the messages of the chatroom, by participant.
 
-During the Shutdown sub-protocol, the participants determine if the chat room transcript is consistent, or if consensus has been reached, and reveal their ephemeral signing keys.
-The revealation of the ephemeral signing keys adds to the deniability property of the protocol, in the same manner the key revealation in OTR protocol does.
+During the Shutdown sub-protocol, the participants determine if the chat room transcript is consistent, and reveal their ephemeral signing keys.
+If the transcript is indeed consistent we say that consensus has been reached.
+The revelation of the ephemeral signing keys adds to the deniability property of the protocol, in the same manner the key revelation in OTR protocol does.
 However, it's an optional feature, since the signing keys are deniable in the first place.
 
 \section{The Sub-protocols}
