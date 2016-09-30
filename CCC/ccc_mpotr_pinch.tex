@@ -142,6 +142,8 @@ In order to implement the mpOTR protocol described in \cite{mpotr}, we had to sp
 We propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol.
 For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc}, but using classic Diffie-Hellman (i.e. not ECDH).
 
+We implemented the mpOTR library as part of the OTR library as seen in \href{https://github.com/Mandragorian/libotr/tree/mpotr}{this github repo\footnote{https://github.com/Mandragorian/libotr/tree/mpotr}}, which, until now, only offered private conversations between two participants.
+Our plugin is based on the pidgin-otr plugin, developed by the OTR community, and can be viewed in \href{https://github.com/Mandragorian/pidgin_otr}{this github repo\footnote{https://github.com/Mandragorian/pidgin\_otr}}.
 %------------------------------------------------
 
 \section{The Protocol}
