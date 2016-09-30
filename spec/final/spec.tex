@@ -17,6 +17,11 @@
 \usepackage[keys]{cryptocode}
 \usepackage{float}
 \usepackage{hyperref}
+\usepackage{tikz}
+
+
+\usetikzlibrary{arrows}
+
 
 \hypersetup{
     colorlinks,
@@ -478,6 +483,44 @@ In algorithm \ref{gka_proto_algo} the two previous algorithms (\ref{upflow_algo}
 	\label{gka_proto_algo}
 \end{algorithm}
 
+\begin{figure}[H]
+  \begin{minipage}{0.49\textwidth}
+    \begin{tikzpicture}[scale=.9]
+      \def \n {5}
+      \def \ndec {4}
+      \def \radius {3cm}
+      \def \margin {8} % margin in angles, depends on the radius
+
+      \foreach \s in {1,...,\ndec}
+      {
+        \node[draw, circle] at ({180 + (360/\n * (\s - 1))}:\radius) {$\s$};
+        \draw[->, >=latex] ({145 + 36 + (360/\n * (\s - 1))+\margin}:\radius)
+          arc ({145 + 36 + (360/\n * (\s - 1))+\margin}:{145 + 36 + 360/\n * (\s)-\margin}:\radius);
+      }
+      \node[draw, circle] at ({181 + 360/\n * (\n - 1)}:\radius) {$\n$};
+    \end{tikzpicture}
+    \caption{This diagram demonstrates the upflow of the intermediate keys}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+    \begin{tikzpicture}[scale=.9]
+      \def \n {5}
+      \def \ndec {4}
+      \def \radius {3cm}
+      \def \margin {8} % margin in angles, depends on the radius
+
+      \foreach \s in {1,...,\ndec}
+      {
+        \node[draw, circle](\s) at ({180 + (360/\n * (\s - 1))}:\radius) {$\s$};
+      }
+      \node[draw, circle](5) at ({181 + 360/\n * (\n - 1)}:\radius) {$\n$};
+      \draw[->, >=latex] (5) -- (1);
+      \draw[->, >=latex] (5) -- (2);
+      \draw[->, >=latex] (5) -- (3);
+      \draw[->, >=latex] (5) -- (4);
+    \end{tikzpicture}
+    \caption{This diagram demonstrates the downflow of the intermediate keys}
+  \end{minipage}
+\end{figure}
 \subsection{Attest}
 
 During this phase the participants must verify that they agree on the $sid_i$,
@@ -838,6 +881,33 @@ key         & MPI       & The Key to be released. \\
 
 \subsection{Message Signature}
 
+\section{API reference}
+
+\subsection{Types}
+
+\begin{itemize}
+  \item otrl\_chat\_token An integer that is used to identify the each chat room.
+    It is the application's responsibility to maintain it.
+  \item OtrlChatInfoPtr A pointer to a structure containing information relevant to the conversation.
+    For example it contains the privacy level (not private, unverified, private etc)
+  \item OtrlChatEventPtr A pointer to an event object.
+    The library emits event when something noteworthy has happened and the application must be notified.
+    It contains all relevant information for the event according to the event type.
+  \item OtrlChatEventType The type of an event.
+\end{itemize}
+
+\subsubsection{Event types}
+
+\begin{itemize}
+  \item OTRL\_CHAT\_EVENT\_OFFER\_RECEIVED Emitted when an offer message is received
+  \item OTRL\_CHAT\_EVENT\_STARTING Emitted when the handshake protocol is starting
+  \item OTRL\_CHAT\_EVENT\_STARTED Emitted when the handshake protocol is finished
+  \item OTRL\_CHAT\_EVENT\_UNVERIFIED\_PARTICIPANT Emitted when an unverified participant is found in the chat room.
+  \item OTRL\_CHAT\_EVENT\_PLAINTEXT\_RECEIVED Emitted when a plaintext message is received in a private chat room.
+  \item OTRL\_CHAT\_EVENT\_PRIVATE\_RECEIVED Emitted when an encrypted message is received in a chat room that is not in an mpOTR session.
+  \item OTRL\_CHAT\_EVENT\_CONSENSUS\_BROKEN Emitted when consensus is not reached with a particular participant
+  \item OTRL\_CHAT\_EVENT\_FINISHED Emitted when the shutdown protocol is finished
+\end{itemize}
 
 \bibliographystyle{plain}
 \bibliography{spec}
