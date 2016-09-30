@@ -158,11 +158,17 @@ For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc}, bu
 
   $\mathcal{K}$ := GKA($sid$, $\mathcal{S}$, $\mathcal{P}$)
 
+  $A$ := Attest($sid$, $\mathcal{S}$, $\mathcal{P}$)
+
+  \If{$A$ $\ne$ "OK"}{
+    \Return{"Error"}
+  }
+
   $\mathcal{T}$ := Communication($sid$, $\mathcal{K}$, $\mathcal{S}$, $\mathcal{P}$)
 
-  $c$ := Shutdown($sid$, $\mathcal{T}$, $\mathcal{S}$, $\mathcal{P}$)
+  $consensus$ := Shutdown($sid$, $\mathcal{T}$, $\mathcal{S}$, $\mathcal{P}$)
 
-  \If{$c$ = "consensus"}{
+  \If{$consensus$ = "consensus"}{
     \Return{"OK"}
   }
   \Else{
