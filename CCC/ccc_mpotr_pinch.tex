@@ -195,11 +195,11 @@ Each participant generates an ephemeral signing key, that he will be using in or
 Then, every participant exchanges their ephemeral signing keys with every other participant, using a Deniable Authenticated Key Exchange (DAKE) algorithm.
 When all exchanges have taken place, every participant has created the association table.
 The ephemeral signing keys to be used in this session are deniable.
-The DSKE sub-protcol and the DAKE are described in more detail in {citation}
+The DSKE sub-protcol and the DAKE are described in more detail in (\ref{dske_subprot})
 
 During the GKA sub-protocol, the participants generate a shared key K that will be used to derive encryption keys.
 These keys, in turn, will be used to encrypt the messages during this session.
-The GKA sub-protcol is described in more detail in {citation}.
+The GKA sub-protcol is described in more detail in (\ref{gka_subprot}).
 
 During the Attest sub-protcol, the participants authenticate the session id sid and ensure that they agree on the association table S.
 
@@ -217,6 +217,7 @@ Here we present the two sub-protocols that are left unspecified in \cite{mpotr}.
 Namely the Deniable Signature Key Exchange (DSKE), and the Group Key Agreement(GKA).
 
 \subsection{DSKE}
+\label{dske_subprot}
 
 In \cite{mpotr} the DSKE is partially described using a sub-sub-protocol named Deniable Authenticated Key Exchange (DAKE) as a black box.
 In our implementation we use the Triple Diffie-Hellman key exchange as a DAKE.
@@ -230,7 +231,7 @@ After all, participants have exchanged signing keys with each other in the manne
 A schematic description of the protocol can be seen in figure \ref{den_ake_schematic}.
 
 \subsection{GKA}
-
+\label{gka_subprot}
 For a GKA we use the protocol as specified in \cite{mpenc}.
 Again, the basic idea used here is the Diffie Hellman key exchange generalized for many participants.
 
