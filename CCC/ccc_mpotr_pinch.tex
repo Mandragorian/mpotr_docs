@@ -187,25 +187,25 @@ The Communication sub-protocol is the one that governs the actual private group 
 Finally, the Shutdown sub-protocol is responsible for every action that needs to be done before ending each private session.
 We briefly describe the function of each sub-protocol below.
 
-During the Offer sub-protocol, the participants create a session id, sid.
+During the Offer sub-protocol, the participants create a session id, $sid$.
 This is a unique (with high probability) number identifying the session.
 
-During the DSKE sub-protocol, each participant creates an association table S which maps each participant to the signing key he is going to use for this session.
+During the DSKE sub-protocol, each participant creates an association table $\mathcal{S}$ which maps each participant to the signing key he is going to use for this session.
 Each participant generates an ephemeral signing key, that he will be using in order to sign his messages during this session.
 Then, every participant exchanges their ephemeral signing keys with every other participant, using a Deniable Authenticated Key Exchange (DAKE) algorithm.
 When all exchanges have taken place, every participant has created the association table.
 The ephemeral signing keys to be used in this session are deniable.
 The DSKE sub-protocol and the DAKE are described in more detail in (\ref{dske_subprot})
 
-During the GKA sub-protocol, the participants generate a shared key K that will be used to derive encryption keys.
+During the GKA sub-protocol, the participants generate a shared key $\mathcal{K}$ that will be used to derive encryption keys.
 The derived keys, in turn, will be used to encrypt the messages during this session.
 The GKA sub-protocol is described in more detail in (\ref{gka_subprot}).
 
-During the Attest sub-protocol, the participants authenticate the session id sid and ensure that they agree on the association table S.
+During the Attest sub-protocol, the participants authenticate the session id $sid$ and ensure that they agree on the association table $\mathcal{S}$.
 
 During the Communication sub-protocol, the actual private conversation takes place.
-The users use the shared secret K, ephemeral signing keys and the association table S, in order to encrypt and authenticate their messages.
-When this phase is finished, a transcript of the chat room T is returned, which contains all the messages of the chatroom, by participant.
+The users use the shared secret $\mathcal{K}$, ephemeral signing keys and the association table $\mathcal{S}$, in order to encrypt and authenticate their messages.
+When this phase is finished, a transcript of the chat room $\mathcal{T}$ is returned, which contains all the messages of the chatroom, by participant.
 
 During the Shutdown sub-protocol, the participants determine if the chat room transcript is consistent, and reveal their ephemeral signing keys.
 If the transcript is indeed consistent we say that consensus has been reached.
