@@ -386,7 +386,7 @@ For the counter, each user stores locally his personal upper half (8 most signif
 The lower half (8 least significant bytes) are always set to zero.
 The top half of the counter is prepended in the sent message.
 
-To decrypt a message, a user concatenates the shared secret with the message's sender's id.
+To decrypt a message, a user concatenates the shared secret with the id of the message's sender.
 He uses the prepended top half of the counter.
 
 This encryption scheme is used, so that the possibility that a certain encryption key and counter pair is eliminated.
