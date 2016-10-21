@@ -53,7 +53,7 @@
 \fancyhead{} % Blank out the default header
 \fancyfoot{} % Blank out the default footer
 \fancyhead[C]{mpOTR Implementation $\bullet$ \today $\bullet$ Chaos Communication Congress} % Custom header text
-\fancyfoot[RO,LE]{\thepage} % Custom footer text
+\fancyfoot[CO,CE]{\thepage} % Custom footer text
 
 \usepackage{titling} % Customizing the title section
 
@@ -64,6 +64,9 @@
 \usepackage[algoruled]{algorithm2e}
 \usepackage{graphicx}
 \usepackage{float}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
 \usepackage[keys]{cryptocode}
 
 \raggedbottom
@@ -79,10 +82,12 @@
 \author{%
 \textsc{Andrikopoulos Konstantinos}\\[1ex] % Your name
 \normalsize National Technical University of Athens \\ % Your institution
+\normalsize University of Athens \\ % Your institution
 \normalsize \href{mailto:gkonstandinos@gmail.com}{gkonstandinos@gmail.com} % Your email address
 \and % Uncomment if 2 authors are required, duplicate these 4 lines if more
 \textsc{Kolotouros Dimitrios} \\[1ex] % Second author's name
 \normalsize National Technical University of Athens \\ % Second author's institution
+\normalsize University of Athens \\ % Your institution
 \normalsize \href{dim.kolotouros@gmail.com}{dim.kolotouros@gmail.com}  % Second author's email address
 \and % Uncomment if 3 authors are required, duplicate these 4 lines if more
 \textsc{Aggelos Kiayias} \\[1ex] % Second author's name
@@ -97,14 +102,21 @@
 \renewcommand{\maketitlehookd}{%
 \begin{abstract}
 \noindent %\blindtext % Dummy abstract text - replace \blindtext with your abstract text
-In today's world, where the need of easy and instant communication must overcome the threat of constant and mass surveillance, the crypto community needs to come up with solutions.
-In particular, the problem of private multi-party chat protocols is one that has recently come into focus.
-While various protocols have been proposed at a theoretical level, there are not many implementations available, particularly for desktop applications.
-The mobile world is more lucky, since the Signal protocol is implemented in various apps with a large userbase, like WhatsApp, Viber and of course the Signal app itself.
-  One other proposed protocol, that is somewhat complete is the Multi-party OTR protocol.
-The mpOTR protocol is an interesting and somewhat intuitive solution to the problem at hand, however it treats the underlying subprotocols as black boxes and does not describe them in detail.
-As a result mpOTR lacks an implementation.
-In this article, we briefly introduce a completed mpOTR protocol and our efforts in implementing it as a pidgin plugin, thus providing a desktop application suitable for private multi-party chatrooms.
+%In today's world, where the need of easy and instant communication must overcome the threat of constant and mass surveillance, the crypto community needs to come up with solutions.
+%In particular, the problem of private multi-party chat protocols is one that has recently come into focus.
+%While various protocols have been proposed at a theoretical level, there are not many implementations available, particularly for desktop applications.
+%The mobile world is more lucky, since the Signal protocol is implemented in various apps with a large userbase, like WhatsApp, Viber and of course the Signal app itself.
+%  One other proposed protocol, that is somewhat complete is the Multi-party OTR protocol.
+%The mpOTR protocol is an interesting and somewhat intuitive solution to the problem at hand, however it treats the underlying subprotocols as black boxes and does not describe them in detail.
+%As a result mpOTR lacks an implementation.
+%In this article, we briefly introduce a completed mpOTR protocol and our efforts in implementing it as a pidgin plugin, thus providing a desktop application suitable for private multi-party chatrooms.
+In a world where the need for easy instant communication must overcome the threat of constant surveillance, end-to-end encryption has become a necessity.
+While some protocols enable end-to-end encryption for two parties, there are limited solutions for multiparty end-to-end encryption, particularly for desktop applications.
+In this paper we describe the first implementation of mpOTR, the multiparty OTR protocol.
+mpOTR achieves confidentiality, authenticity, forward secrecy, deniability, and basic consensus.
+The existing theoretical introduction of mpOTR treats the undrelying subprotocols as black boxes and does not describe them in detail.
+Our contributions are the complete description of the mpOTR protocol including every subprotocol detail and the first implementation of mpOTR.
+Our implementation is a production-grade open source extension of the existing libotr library accompanied by a Pidgin plugin written in C.
 \end{abstract}
 }
 
@@ -121,29 +133,42 @@ In this article, we briefly introduce a completed mpOTR protocol and our efforts
 %----------------------------------------------------------------------------------------
 
 \section{Introduction}
+\lettrine[nindent=0em,lines=3]{P}idgin is the standard desktop application for instant messaging.
+It is accompanied by the OTR plugin, which augments this with end-to-end encryption, providing privacy such that only the communicating users can read the messages exchanged and even the provider of the communication service is prohibited from intercepting such messages.
+The OTR plugin offers the ability for only two users to communicate at a time.
+The underlying communication protocols such as XMPP often offer group chat functionality, giving the ability to open chat rooms where multiple people can communicate.
+Until now, these group chats did not enjoy the benefits of end-to-end encryption.
 
-\lettrine[nindent=0em,lines=3]{T}he goal of our project is to implement a library for private group conversations.
-In addition, we develop a pidgin plugin, that uses this library in order to allow pidgin users to communicate in a familiar environment.
+The goal of our project is to implement a library for private group conversations.
+In addition, we develop a Pidgin plugin, that uses this library in order to allow Pidgin users to communicate in a familiar environment.
 
 Our work is heavily based on the mpOTR paper \cite{mpotr}.
 Following the OTR conventions, the term "private" is used to describe the properties of casual real-life conversations:
 
 \begin{itemize}
-  \item confidentiality
-  \item authentication
-  \item repudiation
-  \item forward secrecy.
+  \item Confidentiality\\
+    Only the participants can read the messages\\[0.2cm]
+
+  \item Authentication\\
+    The participants are certain that they are talking to whom they think they are talking\\[0.2cm]
+
+  \item Repudiation\\
+    No one can prove to someone outside of the chat room that a certain participant authored a specific message\\[0.2cm]
+
+  \item Forward Secrecy\\
+    If the long term secrets are compromised no messages can be read that were authored before the compromise\\[0.2cm]
+
 \end{itemize}
 
 In the context of the multi-party chat room, one more property is required.
 This property is called chat room transcript consistency and generally means that all participants share the same view over the messages  exchanged in a given chat room.
 
 In order to implement the mpOTR protocol described in \cite{mpotr}, we had to specify the sub-protocols that were treated as black boxes and were not fully described.
-We propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie-Hellman protocol.
-For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc}, but using classic Diffie-Hellman (i.e. not ECDH).
+We propose a Deniable Signature Key Exchange (DSKE) based on the pairwise triple Diffie--Hellman \cite{website:openwhisper-tdh} protocol.
+For a Group Key Agreement (GKA) we use the protocol proposed in \cite{mpenc}, but using classic Diffie--Hellman (i.e. not ECDH).
 
-We implemented the mpOTR library as part of the OTR library as seen in \href{https://github.com/Mandragorian/libotr/tree/mpotr}{this github repo\footnote{https://github.com/Mandragorian/libotr/tree/mpotr}}, which, until now, only offered private conversations between two participants.
-Our plugin is based on the pidgin-otr plugin, developed by the OTR community, and can be viewed in \href{https://github.com/Mandragorian/pidgin_otr/tree/mpotr_integration}{this github repo\footnote{https://github.com/Mandragorian/pidgin\_otr/tree/mpotr\_integration}}.
+We implemented the mpOTR library as part of the OTR library as seen in \href{https://github.com/Mandragorian/libotr/tree/mpotr}{our github repo\footnote{https://github.com/Mandragorian/libotr/tree/mpotr}}, which, until now, only offered private conversations between two participants.
+Our plugin is based on the Pidgin-otr plugin, developed by the OTR community, and can be viewed in \href{https://github.com/Mandragorian/pidgin_otr/tree/mpotr_integration}{our github repo\footnote{https://github.com/Mandragorian/pidgin\_otr/tree/mpotr\_integration}}.
 %------------------------------------------------
 
 \section{The Protocol}
@@ -191,20 +216,21 @@ During the Offer sub-protocol, the participants create a session id, $sid$.
 This is a unique (with high probability) number identifying the session.
 
 During the DSKE sub-protocol, each participant creates an association table $\mathcal{S}$ which maps each participant to the signing key he is going to use for this session.
-Each participant generates an ephemeral signing key, that he will be using in order to sign his messages during this session.
+Each participant generates an ephemeral signing key, that she will be using in order to sign her messages during this session.
+This way she ensures her messages are authenticated.
 Then, every participant exchanges their ephemeral signing keys with every other participant, using a Deniable Authenticated Key Exchange (DAKE) algorithm.
 When all exchanges have taken place, every participant has created the association table.
 The ephemeral signing keys to be used in this session are deniable.
-The DSKE sub-protocol and the DAKE are described in more detail in (\ref{dske_subprot}).
+The DSKE sub-protocol and the DAKE are described in more detail in section (\ref{subprots}.\ref{dske_subprot}).
 
 During the GKA sub-protocol, the participants generate a shared key $\mathcal{K}$ that will be used to derive encryption keys.
 The derived keys, in turn, will be used to encrypt the messages during this session.
-The GKA sub-protocol is described in more detail in (\ref{gka_subprot}).
+The GKA sub-protocol is described in more detail in section (\ref{subprots}.\ref{gka_subprot}).
 
 During the Attest sub-protocol, the participants authenticate the session id $sid$ and ensure that they agree on the association table $\mathcal{S}$.
 
 During the Communication sub-protocol, the actual private conversation takes place.
-The users use the shared secret $\mathcal{K}$, ephemeral signing keys and the association table $\mathcal{S}$, in order to encrypt and authenticate their messages.
+The users use the shared secret $\mathcal{K}$, ephemeral signing keys, and the association table $\mathcal{S}$, in order to encrypt and authenticate their messages.
 When this phase is finished, a transcript of the chat room $\mathcal{T}$ is returned, which contains all the messages of the chatroom, by participant.
 
 During the Shutdown sub-protocol, the participants determine if the chat room transcript is consistent, and reveal their ephemeral signing keys.
@@ -213,21 +239,23 @@ The revelation of the ephemeral signing keys adds to the deniability property of
 However, it's an optional feature, since the signing keys are deniable in the first place.
 
 \section{The Sub-protocols}
+\label{subprots}
 
-Here we present the two sub-protocols that are left unspecified in \cite{mpotr}.
-Namely the Deniable Signature Key Exchange (DSKE), and the Group Key Agreement(GKA).
+Here we present the two sub-protocols that are left unspecified in \cite{mpotr}, namely the Deniable Signature Key Exchange (DSKE), and the Group Key Agreement(GKA).
 
 \subsection{DSKE}
 \label{dske_subprot}
 
 In \cite{mpotr} the DSKE is partially described using a sub-sub-protocol named Deniable Authenticated Key Exchange (DAKE) as a black box.
-In our implementation we use the Triple Diffie-Hellman key exchange as a DAKE.
+In our implementation we use the Triple Diffie--Hellman key exchange as a DAKE.
 Triple DH is an authenticated and deniable key exchange.
 
 Each participant executes a Triple DH key exchange with every other participant in the chat room and they generate a shared secret.
-Using that secret the user encrypt-then-MACs his signing key and sends it to the other participant.
+Using that secret the user encrypt-then-MACs the public part of his signing key and sends it to the other participant.
 
-After all, participants have exchanged signing keys with each other in the manner stated above, they all have a signing key association table $\mathcal{S}$.
+After all participants have exchanged signing keys with each other in the manner stated above, they all have a signing key association table $\mathcal{S}$.
+Note that the DSKE is the only step in the setup phase where $O(n^2)$ messages must be sent.
+In the other setup phases and the communication phase only $O(n)$ messages are sent.
 
 A schematic description of the protocol can be seen in figure \ref{den_ake_schematic}.
 
@@ -239,12 +267,10 @@ A schematic description of the protocol can be seen in figure \ref{den_ake_schem
       \< \sendmessageright*{Send \ \left(g^x,g^X\right)} \< \\
       \< \< \text{ Choose a random number $y \in Z_p^*$ } \\
       \< \< s = g^{xy} || g^{Xy} || g^{Yx} \\
-      \< \< k_1 = KDF_1(s) \\
-      \< \< k_2=KDF_2(s) \\
+      \< \< k_1 = KDF_1(s), k_2=KDF_2(s) \\
       \< \sendmessageleft*{Send \ \left(g^y,g^Y\right)} \< \\
       s = g^{xy} || g^{Xy} || g^{Yx} \< \< \\
-      k_1 = KDF_1(s) \< \< \\
-      k_2 = KDF_2(s) \< \< \\
+      k_1 = KDF_1(s), k_2 = KDF_2(s) \< \< \\
       \< \sendmessageright*{ Send \\ c = AES_{k_1}("confirm") \\ MAC_{k_2}(c)\ } \< \\
       \< \< \text{Verify mac} \\
       \< \< m = AES^{-1}_{k_1}(c) \\
@@ -267,11 +293,57 @@ A schematic description of the protocol can be seen in figure \ref{den_ake_schem
 
 \subsection{GKA}
 \label{gka_subprot}
+
+\begin{figure}[t]
+  \begin{minipage}{0.49\textwidth}
+    \begin{tikzpicture}[scale=.9]
+      \def \n {5}
+      \def \ndec {4}
+      \def \radius {3cm}
+      \def \margin {8} % margin in angles, depends on the radius
+
+      \foreach \s in {1,...,\ndec}
+      {
+        \node[draw, circle] at ({180 + (360/\n * (\s - 1))}:\radius) {$\s$};
+        \draw[->, >=latex] ({145 + 36 + (360/\n * (\s - 1))+\margin}:\radius)
+          arc ({145 + 36 + (360/\n * (\s - 1))+\margin}:{145 + 36 + 360/\n * (\s)-\margin}:\radius);
+      }
+      \node[draw, circle] at ({181 + 360/\n * (\n - 1)}:\radius) {$\n$};
+    \end{tikzpicture}
+    \caption{This diagram demonstrates the upflow of the intermediate keys}
+    \label{upflow_diagr}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+    \begin{tikzpicture}[scale=.9]
+      \def \n {5}
+      \def \ndec {4}
+      \def \radius {3cm}
+      \def \margin {8} % margin in angles, depends on the radius
+
+      \foreach \s in {1,...,\ndec}
+      {
+        \node[draw, circle](\s) at ({180 + (360/\n * (\s - 1))}:\radius) {$\s$};
+      }
+      \node[draw, circle](5) at ({181 + 360/\n * (\n - 1)}:\radius) {$\n$};
+      \draw[->, >=latex] (5) -- (1);
+      \draw[->, >=latex] (5) -- (2);
+      \draw[->, >=latex] (5) -- (3);
+      \draw[->, >=latex] (5) -- (4);
+    \end{tikzpicture}
+    \caption{This diagram demonstrates the downflow of the intermediate keys}
+    \label{downflow_diagr}
+  \end{minipage}
+\end{figure}
+
 For a GKA we use the protocol as specified in \cite{mpenc}.
-Again, the basic idea used here is the Diffie Hellman key exchange generalized for many participants.
+Again, the basic idea used here is the Diffie--Hellman key exchange generalized for many participants.
+
+During the GKA protocol, messages are exchanged in two phases: The upflow and the downflow phase.
+During the upflow phase, the messages are exchanged between participants in a sequential manner, and each next participant calculates keys based on the accumulated messages received from the previous participant before contacting the next participant, as shown in Figure \ref{upflow_diagr}.
+After the completion of the upflow phase, the last participant has collected enough data for key generation.
+This data is subsequently communicated to the rest of the group during the downflow phase, as shown in Figure \ref{downflow_diagr}.
 
 In algorithms \ref{upflow_algo}, \ref{downflow_algo}, \ref{gka_proto_algo} the main idea of the GKA we use is presented.
-
 
 \begin{algorithm}[h]
 	\KwIn{P : participants list}
@@ -291,12 +363,9 @@ In algorithms \ref{upflow_algo}, \ref{downflow_algo}, \ref{gka_proto_algo} the m
 
 	send( N , P || inter\_key\_list)
 	}
-	\caption{Upflow Message send algorithm}
+	\caption{Upflow Message send algorithm, send\_upflow}
 	\label{upflow_algo}
 \end{algorithm}
-
-
-
 
 \begin{algorithm}[h]
 	\KwIn{P : participants list}
@@ -316,7 +385,7 @@ In algorithms \ref{upflow_algo}, \ref{downflow_algo}, \ref{gka_proto_algo} the m
 
 	send( N , P || inter\_key\_list)
 	}
-	\caption{Downflow Message send algorithm}
+	\caption{Downflow Message send algorithm, send\_downflow}
 	\label{downflow_algo}
 \end{algorithm}
 
@@ -375,22 +444,40 @@ In algorithms \ref{upflow_algo}, \ref{downflow_algo}, \ref{gka_proto_algo} the m
 \clearpage
 \section{The primitives}
 
-\subsection{Diffie Hellman Group}
+\subsection{Diffie--Hellman Group}
 The already existing libotr implementation of the DH key exchange is used.
-As a result we use classic diffie hellman, and specifically the group no. 5 with a 1536 bit modulus.
+As a result we use classic Diffie--Hellman , and specifically the group no. 5 \cite{website:dh-rfc} with a 1536 bit modulus.
+In the algorithms presented above, all exponentiations are performed in this group.
 
 \subsection{Encryption}
-For encryption we use AES-128 in CTR mode.
-The AES version with a 128-bit block was chosen instead of the 256-bit one, because the diffie hellman group we use does not provide 256 bit of entropy, and because of the various doubts the crypto community has about the key schedule algorithm.
+%For encryption we use AES-128 in CTR mode.
+%The AES version with a 128-bit block was chosen instead of the 256-bit one, because the diffie hellman group we use does not provide 256 bit of entropy, and because of the various doubts the crypto community has about the key schedule algorithm.
+For encryption we use AES-128 in CTR mode, the same cipher as the two-party OTR protocol.
+We chose 128-bit AES instead of the 256-bit one because our Diffie--Hellman group does not provide 256 bit of entropy and evidence suggests that the 128-bit AES key schedule is preferred for security \cite{aes-key-recov} \cite{rijndael-improved-analysis}.
 
 To encrypt a message, a user concatenates the shared secret with his personal id and creates a personal key.
 This is the actual encryption key.
+\[
+k_{enc} = H(id_{personal} || master\ key)
+\]
 For the counter, each user stores locally his personal upper half (8 most significant bytes).
 The lower half (8 least significant bytes) are always set to zero.
 The top half of the counter is prepended in the sent message.
+The ciphertext is produced as follows (where $ctr$ is the top half of the locally stored counter):
+
+\[
+ciphertext = AES_{CTR}(k_{enc}, ctr||0, plaintext)
+\]
 
 To decrypt a message, a user concatenates the shared secret with the id of the message's sender.
+\[
+k_{dec} = H(id_{sender} || master\ key)
+\]
 He uses the prepended top half of the counter.
+
+\[
+plaintext = AES_{CTR}(k_{dec}, ctr||0, ciphertext)
+\]
 
 This encryption scheme is used, so that the possibility that a certain encryption key and counter pair is eliminated.
 If all the participants used the shared secret itself as an encryption key and two users sent a message at the same time, they would use the same counter.
@@ -406,7 +493,7 @@ This means that the signature covers the message and any metadata sent, like ses
 \section{The Plugin}
 Now lets see in summary the workflow of the plugin.
 
-This is what a pidgin chat conversation looks like when no mpOTR session is taking place.
+This is what a Pidgin chat conversation looks like when no mpOTR session is taking place.
 Notice the mpOTR button on the lower right corner, similar to the OTR button.
 
 \includegraphics[scale=0.4]{not_started_unverified.png}
@@ -422,9 +509,9 @@ And when some texts are exchanged.
 
 However, our user (mandragore) hasn't verified another user (mandragore2).
 This means that the conversation is unverified.
-This is presented to the user in Two ways.
+This is presented to the user in two ways.
 First the mpOTR button has a yellow colour and states that the conversation is "Unverified".
-And then, the message "You have not verified user: mandragore2".
+Secondly, the message "You have not verified user: mandragore2".
 This message will be displayed for every unverified user.
 
 In order to verify the user mandragore2, our user clicks on the mpOTR button.
@@ -437,7 +524,7 @@ If he clicks the "Verify fingerprints" option this window opens.
 \includegraphics[scale=0.4]{verification_ui_opened_unverified.png}
 
 In this window the user can click on the user he wants to verify and (after he checks the fingerprint) click on the "Verify" button.
-The selected user will now be verified.
+The selected user will now be locally marked as verified.
 
 \includegraphics[scale=0.4]{verification_ui_selected_user_unverified.png}
 
@@ -451,6 +538,23 @@ Now if the user starts another private conversation the new session will be char
 
 \includegraphics[scale=0.4]{started_verified.png}
 %------------------------------------------------
+
+\section{Related work}
+Various applications that provide end-to-end encrypted group instant messaging exist.
+Signal, Viber, \mbox{WhatsApp} and the Facebook Messenger all use implementations of the Signal protocol but are not completely open source.
+Cryptocat is a free software application that follows the Signal protocol approach and provides group chats.
+
+\section{Future Work}
+
+The chat room transcript consistency property of our implementation only assures that the users share the same view over the sets of messages sent by each participant.
+However, this doesn't prevent any message reordering attacks, enabling an attacker to change the order between messages.
+One possible approach woud be the use of a partial or causal ordering sub-protocol like the one presented in \cite{oldblue}.
+
+We also consider using a cryptographic accumulator, in order to avoid keeping the actual sets of messages in memory, during the session.
+
+Finally, we should note that mpOTR long-lived signing keys are completely different from the OTR ones, although we have implemented mpOTR as part of the OTR library.
+Having to verify two different signing keys for the same person, could prove confusing for casual users.
+One possible solution, we are planning to implement, is to use an already verified OTR instant messaging channel in order to exchange the mpOTR signing keys behind the scenes.
 
 %----------------------------------------------------------------------------------------
 %	REFERENCE LIST
